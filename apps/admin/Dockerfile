@@ -16,7 +16,7 @@ ENV VITE_API_BASE_URL=$VITE_API_BASE_URL \
 RUN npm run build
 
 # ---- serve -----------------------------------------------------------------
-FROM nginx:1.29-alpine AS serve
+FROM nginx:1.31-alpine AS serve
 
 # The official nginx image runs envsubst over /etc/nginx/templates/*.template at
 # start-up, so API_UPSTREAM can be changed per deployment without a rebuild.
