@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Local state
+.env
+.env.*
+!.env.example
+*.db
+*.sqlite
+secrets/
+*.pem
+*.key
+
+# Eval output
+apps/api/results/
+apps/api/*-results.json
+apps/api/routing-eval.txt
+promptfoo-output/
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store

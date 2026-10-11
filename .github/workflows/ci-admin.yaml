@@ -1,0 +1,36 @@
+name: ci-admin
+
+on:
+  push:
+    branches: [main]
+    paths: ["apps/admin/**", ".github/workflows/ci-admin.yaml"]
+  pull_request:
+    paths: ["apps/admin/**", ".github/workflows/ci-admin.yaml"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: apps/admin
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/admin/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - name: Type check (tsc -b; the root tsconfig is references-only, so --noEmit would check nothing)
+        run: npx tsc -b
+      - run: npm test
+      - run: npm run build

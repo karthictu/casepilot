@@ -1,0 +1,17 @@
+# Orchestrator routing cases. `make eval` runs them offline (mock LLM by default, or any configured provider) and
+# fails below the threshold; evals/promptfoo.routing.yaml runs the same idea through Promptfoo against the API.
+threshold: 0.9
+cases:
+  - {query: "Where is BK-100001 right now?", intent: track_shipment, route_to: tracking}
+  - {query: "What's the ETA for shipment BK-100002?", intent: track_shipment, route_to: tracking}
+  - {query: "Can you track BK-100003 for me", intent: track_shipment, route_to: tracking}
+  - {query: "Book 2x40HC from Rotterdam to Singapore, cargo ready 2026-11-15", intent: create_booking, route_to: booking}
+  - {query: "I need space for 3 containers from Shanghai to Los Angeles", intent: create_booking, route_to: booking}
+  - {query: "New booking request: 1x20GP Valencia to Busan", intent: create_booking, route_to: booking}
+  - {query: "Please change the container count on BK-100002 to 6", intent: amend_booking, route_to: booking}
+  - {query: "Amend BK-100001: destination to Busan", intent: amend_booking, route_to: booking}
+  - {query: "Cancel booking BK-100003 please", intent: cancel_booking, route_to: booking}
+  - {query: "We want to cancel BK-100001", intent: cancel_booking, route_to: booking}
+  - {query: "What is the booking status of BK-100002?", intent: get_booking_status, route_to: booking}
+  - {query: "We were charged twice on our invoice", intent: unknown, route_to: hitl}
+  - {query: "hello", intent: unknown, route_to: hitl}

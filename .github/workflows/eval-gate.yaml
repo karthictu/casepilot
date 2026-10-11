@@ -1,0 +1,67 @@
+name: eval-gate
+
+# Routing-accuracy gate for changes to prompts, agents or eval cases.
+on:
+  pull_request:
+    paths: ["apps/api/app/agents/**", "apps/api/evals/**", ".github/workflows/eval-gate.yaml"]
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: "LLM provider (mock = deterministic; litellm = real model via repository secrets)"
+        type: choice
+        options: [mock, litellm]
+        default: mock
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: apps/api
+
+jobs:
+  routing:
+    runs-on: ubuntu-latest
+    env:
+      CASEPILOT_LLM_PROVIDER: ${{ inputs.provider || 'mock' }}
+      CASEPILOT_MODEL_INTENT: ${{ vars.CASEPILOT_MODEL_INTENT || 'openai/gpt-4o-mini' }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - run: uv sync --frozen --all-extras
+      - name: Offline routing eval
+        shell: bash  # bash -eo pipefail, so a failing eval fails the step despite the tee
+        run: uv run python evals/run_evals.py | tee routing-eval.txt
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: routing-eval
+          path: apps/api/routing-eval.txt
+
+  promptfoo:
+    runs-on: ubuntu-latest
+    env:
+      CASEPILOT_DATABASE_URL: sqlite+aiosqlite:///./eval.db
+      CASEPILOT_AUTO_CREATE_TABLES: "true"
+      CASEPILOT_LLM_PROVIDER: ${{ inputs.provider || 'mock' }}
+      CASEPILOT_MODEL_INTENT: ${{ vars.CASEPILOT_MODEL_INTENT || 'openai/gpt-4o-mini' }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: uv sync --frozen
+      - name: Start API
+        run: |
+          uv run uvicorn app.main:app --port 8000 &
+          for i in $(seq 1 30); do curl -sf http://localhost:8000/health && break; sleep 1; done
+      - name: Promptfoo
+        run: npx --yes promptfoo@latest eval -c evals/promptfoo.routing.yaml --no-cache -o promptfoo-results.json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: promptfoo-results
+          path: apps/api/promptfoo-results.json

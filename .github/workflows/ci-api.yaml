@@ -1,0 +1,76 @@
+name: ci-api
+
+on:
+  push:
+    branches: [main]
+    paths: ["apps/api/**", ".github/workflows/ci-api.yaml"]
+  pull_request:
+    paths: ["apps/api/**", ".github/workflows/ci-api.yaml"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: apps/api
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.13"]
+        extras: ["core", "all"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install
+        run: uv sync --frozen ${{ matrix.extras == 'all' && '--all-extras' || '' }}
+      - name: Test (offline; optional-SDK tests skip in the core leg)
+        run: uv run pytest -v -rs
+
+  migrations:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: casepilot
+          POSTGRES_PASSWORD: casepilot
+          POSTGRES_DB: casepilot
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U casepilot" --health-interval 5s --health-retries 10
+    env:
+      CASEPILOT_DATABASE_URL: postgresql+asyncpg://casepilot:casepilot@localhost:5432/casepilot
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - run: uv sync --frozen
+      - name: Upgrade → downgrade → upgrade
+        run: uv run alembic upgrade head && uv run alembic downgrade base && uv run alembic upgrade head
+      - name: Audit table is append-only
+        run: |
+          PGPASSWORD=casepilot psql -h localhost -U casepilot -d casepilot -v ON_ERROR_STOP=1 -c \
+            "INSERT INTO audit_events (id, event_type, actor, surface, payload, created_at)
+             VALUES ('ci-1', 'ci.check', 'ci', 'admin', '{}', now());"
+          if PGPASSWORD=casepilot psql -h localhost -U casepilot -d casepilot -v ON_ERROR_STOP=1 \
+               -c "DELETE FROM audit_events WHERE id = 'ci-1';"; then
+            echo "audit_events accepted a DELETE" && exit 1
+          fi

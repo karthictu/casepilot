@@ -1,0 +1,28 @@
+# Promptfoo routing eval against a running API (`make api`, then `make eval-promptfoo`).
+# Point CASEPILOT_LLM_PROVIDER at a real model to evaluate it; with the mock LLM this doubles as a contract test.
+description: casepilot orchestrator routing
+prompts:
+  - "{{query}}"
+providers:
+  - id: http
+    config:
+      url: "{{env.CASEPILOT_API_URL | default('http://localhost:8000')}}/api/agents/orchestrator/classify"
+      method: POST
+      headers:
+        Content-Type: application/json
+      body:
+        query: "{{prompt}}"
+      transformResponse: json
+defaultTest:
+  assert:
+    - type: javascript
+      value: output.intent === context.vars.intent
+    - type: javascript
+      value: output.route_to === context.vars.route_to
+tests:
+  - vars: {query: "Where is BK-100001 right now?", intent: track_shipment, route_to: tracking}
+  - vars: {query: "Book 2x40HC from Rotterdam to Singapore, cargo ready 2026-11-15", intent: create_booking, route_to: booking}
+  - vars: {query: "Please change the container count on BK-100002 to 6", intent: amend_booking, route_to: booking}
+  - vars: {query: "Cancel booking BK-100003 please", intent: cancel_booking, route_to: booking}
+  - vars: {query: "What is the booking status of BK-100002?", intent: get_booking_status, route_to: booking}
+  - vars: {query: "We were charged twice on our invoice", intent: unknown, route_to: hitl}

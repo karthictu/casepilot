@@ -1,0 +1,41 @@
+# Local infrastructure. `make db` starts Postgres; `make temporal` adds a Temporal dev server.
+# `docker compose --profile app up --build` also runs the API and admin UI in containers.
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: casepilot
+      POSTGRES_PASSWORD: casepilot
+      POSTGRES_DB: casepilot
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U casepilot"]
+      interval: 5s
+      retries: 10
+
+  temporal:
+    profiles: [temporal]
+    image: temporalio/temporal:latest
+    command: ["server", "start-dev", "--ip", "0.0.0.0"]
+    ports: ["7233:7233", "8233:8233"]
+
+  api:
+    profiles: [app]
+    build: ./apps/api
+    environment:
+      CASEPILOT_DATABASE_URL: postgresql+asyncpg://casepilot:casepilot@postgres:5432/casepilot
+      CASEPILOT_SEED_ON_STARTUP: "true"
+      CASEPILOT_CORS_ORIGINS: '["http://localhost:8080"]'
+    ports: ["8000:8000"]
+    depends_on:
+      postgres: {condition: service_healthy}
+
+  admin:
+    profiles: [app]
+    build: ./apps/admin
+    ports: ["8080:80"]
+    depends_on: [api]
+
+volumes:
+  pgdata:

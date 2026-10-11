@@ -1,0 +1,58 @@
+[
+  {
+    "external_id": "CASE-0001",
+    "subject": "New booking request Rotterdam to Singapore",
+    "description": "Hello team,\nPlease book 2x40HC from Rotterdam to Singapore. Cargo ready date 2026-11-15, commodity: machinery parts.\nThanks,\nOps team",
+    "from_address": "ops@acme-imports.example.com",
+    "reason": "booking_create"
+  },
+  {
+    "external_id": "CASE-0002",
+    "subject": "Booking needed for Shanghai shipment",
+    "description": "Hi, we need space for 3x20GP from Shanghai to Los Angeles next month. Can you help?",
+    "from_address": "logistics@globex.example.com",
+    "reason": "booking_create"
+  },
+  {
+    "external_id": "CASE-0003",
+    "subject": "Change container count on BK-100002",
+    "description": "Please change the container count to 6 on booking BK-100002. Everything else stays the same.",
+    "from_address": "logistics@globex.example.com",
+    "reason": "booking_amend"
+  },
+  {
+    "external_id": "CASE-0004",
+    "subject": "Cancel BK-100003",
+    "description": "Our buyer pulled the order, please cancel booking BK-100003.",
+    "from_address": "export@initech.example.com",
+    "reason": "booking_cancel"
+  },
+  {
+    "external_id": "CASE-0005",
+    "subject": "Where is my shipment?",
+    "description": "Can you tell me where BK-100001 is and when it arrives?",
+    "from_address": "ops@acme-imports.example.com",
+    "reason": "shipment_tracking"
+  },
+  {
+    "external_id": "CASE-0006",
+    "subject": "Invoice question",
+    "description": "We were charged twice on our last invoice, please check.",
+    "from_address": "finance@umbrella.example.com",
+    "reason": "invoice_dispute"
+  },
+  {
+    "external_id": "CASE-0007",
+    "subject": "Booking change and cancellation",
+    "description": "Please cancel BK-100001 and book a new one from Antwerp to Busan instead.",
+    "from_address": "ops@acme-imports.example.com",
+    "reason": "booking_amend"
+  },
+  {
+    "external_id": "CASE-0008",
+    "subject": "Booking request Valencia - Busan",
+    "description": "Kindly book 1x40RF from Valencia to Busan, cargo ready 2026-12-01. Commodity: frozen fruit. Contact +44 20 7946 0958.",
+    "from_address": "cold-chain@hooli.example.com",
+    "reason": "booking_create"
+  }
+]
